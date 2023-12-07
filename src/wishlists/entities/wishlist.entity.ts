@@ -1,7 +1,8 @@
 import { CommonEntity } from 'src/common.entity';
 import { Wish } from 'src/wishes/entities/wish.entity';
-import { Entity, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
 import { Length, IsUrl } from 'class-validator';
+import { User } from 'src/users/entities/user.entity';
 
 @Entity()
 export class Wishlist extends CommonEntity {
@@ -15,6 +16,9 @@ export class Wishlist extends CommonEntity {
   @Column()
   @IsUrl()
   image: string;
+
+  @ManyToOne(() => User, (user: User) => user.wishlists)
+  owner: User;
 
   @ManyToMany(() => Wish)
   @JoinTable()

@@ -1,34 +1,53 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { findUserDto } from './dto/find-user.dto';
+import { JwtGuard } from '../auth/guards/jwt.guard';
 
 @Controller('users')
+@UseGuards(JwtGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Get('/me/wishes')
+  findCurrentUsersWishes(@Request() req) {
+    return this.usersService.findUsersWishesByUsername(req.user.username);
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  @Get('/me')
+  findCurrentUser(@Request() req) {
+    return req.user;
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(+id);
+  @Patch('/me')
+  findAndUpdateCurrentUser(
+    @Request() req,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.findAndUpdateCurrentUser(req.user, updateUserDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  @Get(':username')
+  findUserByUsername(@Param('username') username: string) {
+    return this.usersService.findUserByUsername(username);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(+id);
+  @Get(':username/wishes')
+  findUsersWishesByUsername(@Param('username') username: string) {
+    return this.usersService.findUsersWishesByUsername(username);
+  }
+
+  @Post('/find')
+  create(@Body() findUserDto: findUserDto) {
+    return this.usersService.findUserByQuery(findUserDto);
   }
 }

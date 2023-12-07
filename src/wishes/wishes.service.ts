@@ -8,8 +8,12 @@ export class WishesService {
     return 'This action adds a new wish';
   }
 
-  findAll() {
-    return `This action returns all wishes`;
+  findLastWishes() {
+    return `This action returns last wishes`;
+  }
+
+  findTopWishes() {
+    return `This action returns top wishes`;
   }
 
   findOne(id: number) {
@@ -22,5 +26,9 @@ export class WishesService {
 
   remove(id: number) {
     return `This action removes a #${id} wish`;
+  }
+
+  copyWish(id: number) {
+    return `This action copies a #${id} wish`;
   }
 }

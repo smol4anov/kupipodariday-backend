@@ -1,5 +1,4 @@
 import { DataSourceOptions } from 'typeorm';
-import { User } from './users/entities/user.entity';
 
 require('dotenv').config();
 

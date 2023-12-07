@@ -1,4 +1,4 @@
-import { Entity, Column, OneToMany, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { Length, IsUrl, IsEmail } from 'class-validator';
 import { Wish } from 'src/wishes/entities/wish.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
@@ -7,7 +7,7 @@ import { CommonEntity } from 'src/common.entity';
 
 @Entity()
 export class User extends CommonEntity {
-  @Column({ length: 30 })
+  @Column({ length: 30, unique: true })
   @Length(2, 30)
   username: string;
 
@@ -32,7 +32,6 @@ export class User extends CommonEntity {
   @OneToMany(() => Offer, (offer: Offer) => offer.user)
   offers: Offer[];
 
-  @ManyToMany(() => Wishlist)
-  @JoinTable()
+  @OneToMany(() => Wishlist, (wishlist: Wishlist) => wishlist.owner)
   wishlists: Wishlist[];
 }
