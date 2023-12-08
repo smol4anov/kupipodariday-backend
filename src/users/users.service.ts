@@ -37,7 +37,7 @@ export class UsersService {
 
   async findUser(username: string) {
     const user = await this.userRepository.findOne({
-      where: { username: username },
+      where: { username },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -58,13 +58,13 @@ export class UsersService {
       currentUser.password = await hash(updateUserDto.password, 10);
     }
     try {
-      await this.userRepository.save(currentUser);
+      const { password, ...user } = await this.userRepository.save(currentUser);
+      return user;
     } catch (err) {
       if (err instanceof QueryFailedError) {
         throw new BadRequestException(err.message);
       }
     }
-    return this.findUser(updateUserDto.username);
   }
 
   async findUserByUsername(username: string) {
@@ -74,13 +74,10 @@ export class UsersService {
 
   async findUsersWishesByUsername(username: string) {
     const user = await this.userRepository.findOne({
-      select: { wishes: true },
       relations: {
         wishes: true,
       },
-      where: {
-        username: username,
-      },
+      where: { username },
     });
     if (!user) {
       throw new NotFoundException('User not found');

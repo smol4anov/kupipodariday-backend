@@ -1,34 +1,108 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  HttpCode,
+  BadRequestException,
+  InternalServerErrorException,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
+import { Repository, QueryFailedError } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Wish } from './entities/wish.entity';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class WishesService {
-  create(createWishDto: CreateWishDto) {
-    return 'This action adds a new wish';
+  constructor(
+    @InjectRepository(Wish)
+    private wishRepository: Repository<Wish>,
+    private configService: ConfigService,
+  ) {}
+
+  @HttpCode(201)
+  async create(user: User, createWishDto: CreateWishDto) {
+    const newWish = this.wishRepository.create(createWishDto);
+    newWish.owner = user;
+    try {
+      const result = await this.wishRepository.insert(newWish);
+      return this.findOne(result.identifiers[0].id);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        throw new BadRequestException(err.message);
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
-  findLastWishes() {
-    return `This action returns last wishes`;
+  async findLastWishes() {
+    const result = await this.wishRepository.find({
+      take: this.configService.get<number>('NUMBER_OF_LAST_WISHES', 40),
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    return result;
   }
 
-  findTopWishes() {
-    return `This action returns top wishes`;
+  async findTopWishes() {
+    return await this.wishRepository.find({
+      take: this.configService.get<number>('NUMBER_OF_TOP_WISHES', 20),
+      order: {
+        copied: 'DESC',
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} wish`;
+  async findOne(id: number) {
+    return await this.wishRepository.findOne({
+      where: { id },
+      relations: {
+        owner: true,
+        offers: true,
+      },
+    });
   }
 
-  update(id: number, updateWishDto: UpdateWishDto) {
-    return `This action updates a #${id} wish`;
+  async update(id: number, userId: number, updateWishDto: UpdateWishDto) {
+    const wish = await this.wishRepository.findOne({
+      relations: {
+        offers: true,
+      },
+      where: { id },
+    });
+    if (!wish) {
+      throw new NotFoundException('Wish not found');
+    }
+    if (wish.offers.length > 0) {
+      throw new ForbiddenException('Wish has offers already');
+    }
+    if (wish.owner.id !== userId) {
+      throw new ForbiddenException(`Forbidden to update someone else's wish`);
+    }
+    Object.assign(wish, updateWishDto);
+    try {
+      return await this.wishRepository.save(wish);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        throw new BadRequestException(err.message);
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} wish`;
+  async remove(id: number, userId: number) {
+    const wish = await this.findOne(id);
+    if (wish.owner.id !== userId) {
+      throw new ForbiddenException(`Forbidden to delete someone else's wish`);
+    }
+    return await this.wishRepository.delete(wish);
   }
 
-  copyWish(id: number) {
-    return `This action copies a #${id} wish`;
+  async copyWish(id: number, user: User) {
+    const wish = await this.findOne(id);
+    return this.create(user, wish);
   }
 }

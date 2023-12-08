@@ -11,7 +11,7 @@ export class Offer extends CommonEntity {
   @ManyToOne(() => Wish, (wish: Wish) => wish.offers)
   item: Wish;
 
-  @Column({ type: 'numeric', precision: 2 })
+  @Column({ type: 'numeric', scale: 2 })
   amount: number;
 
   @Column({ default: false })

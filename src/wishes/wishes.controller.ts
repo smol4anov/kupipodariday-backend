@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { WishesService } from './wishes.service';
 import { CreateWishDto } from './dto/create-wish.dto';
@@ -19,8 +20,8 @@ export class WishesController {
   constructor(private readonly wishesService: WishesService) {}
 
   @Post()
-  create(@Body() createWishDto: CreateWishDto) {
-    return this.wishesService.create(createWishDto);
+  create(@Request() req, @Body() createWishDto: CreateWishDto) {
+    return this.wishesService.create(req.user, createWishDto);
   }
 
   @Get('/last')
@@ -39,17 +40,21 @@ export class WishesController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateWishDto: UpdateWishDto) {
-    return this.wishesService.update(+id, updateWishDto);
+  update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() updateWishDto: UpdateWishDto,
+  ) {
+    return this.wishesService.update(+id, req.user.id, updateWishDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.wishesService.remove(+id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.wishesService.remove(+id, req.user.id);
   }
 
   @Post(':id/copy')
-  copyWish(@Param('id') id: string) {
-    return this.wishesService.copyWish(+id);
+  copyWish(@Request() req, @Param('id') id: string) {
+    return this.wishesService.copyWish(+id, req.user);
   }
 }

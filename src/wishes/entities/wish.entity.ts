@@ -18,10 +18,10 @@ export class Wish extends CommonEntity {
   @IsUrl()
   image: string;
 
-  @Column({ type: 'numeric', precision: 2 })
-  prise: number;
+  @Column({ type: 'numeric', scale: 2 })
+  price: number;
 
-  @Column({ type: 'numeric', precision: 2 })
+  @Column({ default: 0, type: 'numeric', scale: 2 })
   raised: number;
 
   @ManyToOne(() => User, (user: User) => user.wishes)
@@ -34,6 +34,6 @@ export class Wish extends CommonEntity {
   @OneToMany(() => Offer, (offer: Offer) => offer.item)
   offers: Offer[];
 
-  @Column()
+  @Column({ default: 0 })
   copied: number;
 }

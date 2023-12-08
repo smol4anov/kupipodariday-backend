@@ -26,7 +26,7 @@ export class CreateWishDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(1)
-  prise: number;
+  price: number;
 
   @IsString()
   @IsNotEmpty()
