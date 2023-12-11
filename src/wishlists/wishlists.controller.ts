@@ -21,7 +21,7 @@ export class WishlistsController {
 
   @Post()
   create(@Request() req, @Body() createWishlistDto: CreateWishlistDto) {
-    return this.wishlistsService.create(createWishlistDto);
+    return this.wishlistsService.create(req.user, createWishlistDto);
   }
 
   @Get()
@@ -36,14 +36,15 @@ export class WishlistsController {
 
   @Patch(':id')
   update(
+    @Request() req,
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
-    return this.wishlistsService.update(+id, updateWishlistDto);
+    return this.wishlistsService.update(+id, req.user.id, updateWishlistDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.wishlistsService.remove(+id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.wishlistsService.remove(+id, req.user.id);
   }
 }

@@ -23,7 +23,7 @@ export class User extends CommonEntity {
   @IsEmail()
   email: string;
 
-  @Column()
+  @Column({ select: false })
   password: string;
 
   @OneToMany(() => Wish, (wish: Wish) => wish.owner)

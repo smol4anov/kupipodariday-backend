@@ -1,8 +1,17 @@
-import { CommonEntity } from 'src/common.entity';
-import { Entity, Column, ManyToOne, OneToMany } from 'typeorm';
+import { CommonEntity } from '../../common.entity';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToMany,
+  ManyToMany,
+  JoinTable,
+} from 'typeorm';
 import { Length, IsUrl } from 'class-validator';
-import { User } from 'src/users/entities/user.entity';
-import { Offer } from 'src/offers/entities/offer.entity';
+import { User } from '../../users/entities/user.entity';
+import { Offer } from '../../offers/entities/offer.entity';
+import { DecimalColumnTransformer } from '../../utils/decimal-column-transformer';
+import { Wishlist } from '../../wishlists/entities/wishlist.entity';
 
 @Entity()
 export class Wish extends CommonEntity {
@@ -18,10 +27,21 @@ export class Wish extends CommonEntity {
   @IsUrl()
   image: string;
 
-  @Column({ type: 'numeric', scale: 2 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: new DecimalColumnTransformer(),
+  })
   price: number;
 
-  @Column({ default: 0, type: 'numeric', scale: 2 })
+  @Column({
+    default: 0,
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    transformer: new DecimalColumnTransformer(),
+  })
   raised: number;
 
   @ManyToOne(() => User, (user: User) => user.wishes)
@@ -36,4 +56,8 @@ export class Wish extends CommonEntity {
 
   @Column({ default: 0 })
   copied: number;
+
+  @ManyToMany(() => Wishlist, (wishlist: Wishlist) => wishlist.items)
+  @JoinTable({ name: 'wishes_lists' })
+  lists: Wishlist[];
 }

@@ -23,20 +23,21 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     try {
       createUserDto.password = await hash(createUserDto.password, 10);
-      await this.userRepository.insert(createUserDto);
+      const result = await this.userRepository.insert(createUserDto);
+      return this.findOne(result.identifiers[0].id);
     } catch (err) {
       if (err instanceof QueryFailedError) {
         const error = err.driverError as DatabaseError;
         if (error.code === '23505') {
-          throw new ConflictException('username already exist');
+          throw new ConflictException('Username or email already exist');
         }
       }
     }
-    return this.findUser(createUserDto.username);
   }
 
   async findUser(username: string) {
     const user = await this.userRepository.findOne({
+      select: { id: true, password: true },
       where: { username },
     });
     if (!user) {
@@ -68,7 +69,9 @@ export class UsersService {
   }
 
   async findUserByUsername(username: string) {
-    const { password, ...user } = await this.findUser(username);
+    const { password, ...user } = await this.userRepository.findOne({
+      where: { username },
+    });
     return user;
   }
 
