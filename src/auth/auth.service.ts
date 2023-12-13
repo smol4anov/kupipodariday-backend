@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async validatePassword(username: string, password: string) {
-    const user = await this.usersService.findUser(username);
+    const user = await this.usersService.getUsersHiddenFields(username);
 
     if (user && (await compare(password, user.password))) {
       const { password, ...result } = user;

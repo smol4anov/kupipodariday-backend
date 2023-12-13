@@ -9,7 +9,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
-import { Repository, QueryFailedError, DataSource, In } from 'typeorm';
+import {
+  Repository,
+  QueryFailedError,
+  DataSource,
+  In,
+  DeleteResult,
+} from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Wish } from './entities/wish.entity';
 import { User } from '../users/entities/user.entity';
@@ -24,13 +30,12 @@ export class WishesService {
   ) {}
 
   @HttpCode(201)
-  async create(user: User, createWishDto: CreateWishDto) {
+  async createWish(user: User, createWishDto: CreateWishDto): Promise<Wish> {
     const newWish = this.wishRepository.create(createWishDto);
     newWish.owner = user;
     try {
       const result = await this.wishRepository.insert(newWish);
-      console.log(result.identifiers[0].id);
-      return this.findOne(result.identifiers[0].id);
+      return this.findWishById(result.identifiers[0].id);
     } catch (err) {
       if (err instanceof QueryFailedError) {
         throw new BadRequestException(err.message);
@@ -39,7 +44,7 @@ export class WishesService {
     }
   }
 
-  async findLastWishes() {
+  async findLastWishes(): Promise<Wish[]> {
     const result = await this.wishRepository.find({
       take: this.configService.get<number>('NUMBER_OF_LAST_WISHES', 40),
       order: {
@@ -49,7 +54,7 @@ export class WishesService {
     return result;
   }
 
-  async findTopWishes() {
+  async findTopWishes(): Promise<Wish[]> {
     return await this.wishRepository.find({
       take: this.configService.get<number>('NUMBER_OF_TOP_WISHES', 20),
       order: {
@@ -58,7 +63,7 @@ export class WishesService {
     });
   }
 
-  async findOne(id: number) {
+  async findWishById(id: number): Promise<Wish> {
     const wish = await this.wishRepository.findOne({
       where: {
         id,
@@ -76,8 +81,8 @@ export class WishesService {
     return wish;
   }
 
-  async findOneForUpdateOrDelete(id: number, userId: number) {
-    const wish = await this.findOne(id);
+  async findWishForUpdateOrDelete(id: number, userId: number): Promise<Wish> {
+    const wish = await this.findWishById(id);
     if (wish.offers.length > 0) {
       throw new ForbiddenException('Wish has offers already');
     }
@@ -87,8 +92,12 @@ export class WishesService {
     return wish;
   }
 
-  async update(id: number, userId: number, updateWishDto: UpdateWishDto) {
-    const wish = await this.findOneForUpdateOrDelete(id, userId);
+  async updateWish(
+    id: number,
+    userId: number,
+    updateWishDto: UpdateWishDto,
+  ): Promise<Wish> {
+    const wish = await this.findWishForUpdateOrDelete(id, userId);
 
     Object.assign(wish, updateWishDto);
     try {
@@ -101,14 +110,14 @@ export class WishesService {
     }
   }
 
-  async remove(id: number, userId: number) {
-    await this.findOneForUpdateOrDelete(id, userId);
+  async removeWish(id: number, userId: number): Promise<DeleteResult> {
+    await this.findWishForUpdateOrDelete(id, userId);
 
     return await this.wishRepository.delete(id);
   }
 
-  async copyWish(wishId: number, user: User) {
-    const wish = await this.findOne(wishId);
+  async copyWish(wishId: number, user: User): Promise<Wish> {
+    const wish = await this.findWishById(wishId);
 
     wish.copied++;
 
@@ -120,7 +129,7 @@ export class WishesService {
 
     try {
       await this.wishRepository.save(wish);
-      const newWish = this.create(user, {
+      const newWish = this.createWish(user, {
         name,
         link,
         image,
@@ -143,8 +152,12 @@ export class WishesService {
     }
   }
 
-  async changeRaisedSum(wishId: number, amount: number, userId: number) {
-    const wish = await this.findOne(wishId);
+  async changeWishesRaisedSum(
+    wishId: number,
+    amount: number,
+    userId: number,
+  ): Promise<Wish> {
+    const wish = await this.findWishById(wishId);
 
     if (wish.price - wish.raised < amount) {
       throw new BadRequestException(
@@ -160,7 +173,7 @@ export class WishesService {
     return await this.wishRepository.save(wish);
   }
 
-  async findManyByIds(ids: number[]) {
+  async findManyWishesByIds(ids: number[]): Promise<Wish[]> {
     return await this.wishRepository.findBy({ id: In(ids) });
   }
 }

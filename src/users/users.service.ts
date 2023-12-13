@@ -12,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DatabaseError } from 'pg';
 import { hash } from 'bcrypt';
 import { User } from './entities/user.entity';
+import { Wish } from '../wishes/entities/wish.entity';
 
 @Injectable()
 export class UsersService {
@@ -20,11 +21,11 @@ export class UsersService {
     private userRepository: Repository<User>,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async createUser(createUserDto: CreateUserDto): Promise<User> {
     try {
       createUserDto.password = await hash(createUserDto.password, 10);
       const result = await this.userRepository.insert(createUserDto);
-      return this.findOne(result.identifiers[0].id);
+      return this.findUserById(result.identifiers[0].id);
     } catch (err) {
       if (err instanceof QueryFailedError) {
         const error = err.driverError as DatabaseError;
@@ -35,7 +36,7 @@ export class UsersService {
     }
   }
 
-  async findUser(username: string) {
+  async getUsersHiddenFields(username: string): Promise<User> {
     const user = await this.userRepository.findOne({
       select: { id: true, password: true, email: true },
       where: { username },
@@ -46,19 +47,19 @@ export class UsersService {
     return user;
   }
 
-  async findOne(id: number) {
+  async findUserById(id: number): Promise<User> {
     return await this.userRepository.findOne({ where: { id } });
   }
 
-  async findCurrentUser(currentUser: User) {
-    const hiddenFields = await this.findUser(currentUser.username);
+  async findCurrentUser(currentUser: User): Promise<User> {
+    const hiddenFields = await this.getUsersHiddenFields(currentUser.username);
     return { ...currentUser, email: hiddenFields.email };
   }
 
   async findAndUpdateCurrentUser(
     currentUser: User,
     updateUserDto: UpdateUserDto,
-  ) {
+  ): Promise<Omit<User, 'password'>> {
     Object.assign(currentUser, updateUserDto);
     if (updateUserDto.password) {
       currentUser.password = await hash(updateUserDto.password, 10);
@@ -73,13 +74,13 @@ export class UsersService {
     }
   }
 
-  async findUserByUsername(username: string) {
+  async findUserByUsername(username: string): Promise<User> {
     return await this.userRepository.findOne({
       where: { username },
     });
   }
 
-  async findUsersWishesByUsername(username: string) {
+  async findUsersWishesByUsername(username: string): Promise<Wish[]> {
     const user = await this.userRepository.findOne({
       relations: {
         wishes: true,
@@ -92,7 +93,7 @@ export class UsersService {
     return user.wishes;
   }
 
-  async findUserByQuery(findUserDto: FindUserDto) {
+  async findUserByQuery(findUserDto: FindUserDto): Promise<User[]> {
     return await this.userRepository.find({
       where: [
         { username: ILike(`%${findUserDto.query}%`) },

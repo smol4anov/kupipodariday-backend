@@ -3,11 +3,12 @@ import {
   HttpCode,
   BadRequestException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError, DataSource } from 'typeorm';
 import { CreateOfferDto } from './dto/create-offer.dto';
-import { User } from 'src/users/entities/user.entity';
+import { User } from '../users/entities/user.entity';
 import { Offer } from './entities/offer.entity';
 import { WishesService } from '../wishes/wishes.service';
 
@@ -21,7 +22,10 @@ export class OffersService {
   ) {}
 
   @HttpCode(201)
-  async create(user: User, createOfferDto: CreateOfferDto) {
+  async createOffer(
+    user: User,
+    createOfferDto: CreateOfferDto,
+  ): Promise<Offer> {
     const newOffer = this.offerRepository.create(createOfferDto);
 
     newOffer.user = user;
@@ -31,7 +35,7 @@ export class OffersService {
     await queryRunner.startTransaction();
 
     try {
-      newOffer.item = await this.wishesService.changeRaisedSum(
+      newOffer.item = await this.wishesService.changeWishesRaisedSum(
         createOfferDto.itemId,
         newOffer.amount,
         user.id,
@@ -40,7 +44,7 @@ export class OffersService {
       const result = await this.offerRepository.insert(newOffer);
 
       await queryRunner.commitTransaction();
-      return this.findOne(result.identifiers[0].id);
+      return this.findOfferById(result.identifiers[0].id);
     } catch (err) {
       await queryRunner.rollbackTransaction();
       if (
@@ -55,11 +59,15 @@ export class OffersService {
     }
   }
 
-  async findAll() {
+  async findAllOffers(): Promise<Offer[]> {
     return await this.offerRepository.find();
   }
 
-  async findOne(id: number) {
-    return await this.offerRepository.findOne({ where: { id } });
+  async findOfferById(id: number): Promise<Offer> {
+    const offer = await this.offerRepository.findOne({ where: { id } });
+    if (!offer) {
+      throw new NotFoundException('Offer not found');
+    }
+    return offer;
   }
 }

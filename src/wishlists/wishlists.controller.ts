@@ -21,17 +21,17 @@ export class WishlistsController {
 
   @Post()
   create(@Request() req, @Body() createWishlistDto: CreateWishlistDto) {
-    return this.wishlistsService.create(req.user, createWishlistDto);
+    return this.wishlistsService.createWishlist(req.user, createWishlistDto);
   }
 
   @Get()
   findAll() {
-    return this.wishlistsService.findAll();
+    return this.wishlistsService.findAllWishlists();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.wishlistsService.findOne(+id);
+    return this.wishlistsService.findWishlistById(+id);
   }
 
   @Patch(':id')
@@ -40,11 +40,15 @@ export class WishlistsController {
     @Param('id') id: string,
     @Body() updateWishlistDto: UpdateWishlistDto,
   ) {
-    return this.wishlistsService.update(+id, req.user.id, updateWishlistDto);
+    return this.wishlistsService.updateWishlist(
+      +id,
+      req.user.id,
+      updateWishlistDto,
+    );
   }
 
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
-    return this.wishlistsService.remove(+id, req.user.id);
+    return this.wishlistsService.removeWishlist(+id, req.user.id);
   }
 }

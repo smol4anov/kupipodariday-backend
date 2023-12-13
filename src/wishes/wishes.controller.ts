@@ -21,7 +21,7 @@ export class WishesController {
   @UseGuards(JwtGuard)
   @Post()
   create(@Request() req, @Body() createWishDto: CreateWishDto) {
-    return this.wishesService.create(req.user, createWishDto);
+    return this.wishesService.createWish(req.user, createWishDto);
   }
 
   @Get('/last')
@@ -37,7 +37,7 @@ export class WishesController {
   @UseGuards(JwtGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.wishesService.findOne(+id);
+    return this.wishesService.findWishById(+id);
   }
 
   @UseGuards(JwtGuard)
@@ -47,13 +47,13 @@ export class WishesController {
     @Param('id') id: string,
     @Body() updateWishDto: UpdateWishDto,
   ) {
-    return this.wishesService.update(+id, req.user.id, updateWishDto);
+    return this.wishesService.updateWish(+id, req.user.id, updateWishDto);
   }
 
   @UseGuards(JwtGuard)
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
-    return this.wishesService.remove(+id, req.user.id);
+    return this.wishesService.removeWish(+id, req.user.id);
   }
 
   @UseGuards(JwtGuard)

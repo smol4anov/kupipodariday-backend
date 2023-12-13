@@ -18,16 +18,16 @@ export class OffersController {
 
   @Post()
   create(@Req() req, @Body() createOfferDto: CreateOfferDto) {
-    return this.offersService.create(req.user, createOfferDto);
+    return this.offersService.createOffer(req.user, createOfferDto);
   }
 
   @Get()
   findAll() {
-    return this.offersService.findAll();
+    return this.offersService.findAllOffers();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.offersService.findOne(+id);
+    return this.offersService.findOfferById(+id);
   }
 }

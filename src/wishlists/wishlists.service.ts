@@ -7,7 +7,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError } from 'typeorm';
+import { Repository, QueryFailedError, DeleteResult } from 'typeorm';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { Wishlist } from './entities/wishlist.entity';
@@ -23,8 +23,11 @@ export class WishlistsService {
   ) {}
 
   @HttpCode(201)
-  async create(user: User, createWishlistDto: CreateWishlistDto) {
-    const wishes = await this.wishesService.findManyByIds(
+  async createWishlist(
+    user: User,
+    createWishlistDto: CreateWishlistDto,
+  ): Promise<Wishlist> {
+    const wishes = await this.wishesService.findManyWishesByIds(
       createWishlistDto.itemsId,
     );
     const newWishlist = this.wishlistRepository.create({
@@ -43,7 +46,7 @@ export class WishlistsService {
     }
   }
 
-  async findAll() {
+  async findAllWishlists(): Promise<Wishlist[]> {
     return await this.wishlistRepository.find({
       relations: {
         owner: true,
@@ -52,8 +55,8 @@ export class WishlistsService {
     });
   }
 
-  async findOne(id: number) {
-    return await this.wishlistRepository.findOne({
+  async findWishlistById(id: number): Promise<Wishlist> {
+    const wishlist = await this.wishlistRepository.findOne({
       where: {
         id,
       },
@@ -62,14 +65,18 @@ export class WishlistsService {
         items: true,
       },
     });
+    if (!wishlist) {
+      throw new NotFoundException('Wishlist not found');
+    }
+    return wishlist;
   }
 
-  async update(
+  async updateWishlist(
     id: number,
     userId: number,
     updateWishlistDto: UpdateWishlistDto,
-  ) {
-    const wishlist = await this.findOne(id);
+  ): Promise<Wishlist> {
+    const wishlist = await this.findWishlistById(id);
     if (!wishlist) {
       throw new NotFoundException('Wish not found');
     }
@@ -80,7 +87,7 @@ export class WishlistsService {
       );
     }
     Object.assign(wishlist, updateWishlistDto);
-    wishlist.items = await this.wishesService.findManyByIds(
+    wishlist.items = await this.wishesService.findManyWishesByIds(
       updateWishlistDto.itemsId,
     );
     try {
@@ -93,8 +100,11 @@ export class WishlistsService {
     }
   }
 
-  async remove(id: number, userId: number) {
-    const wishlist = await this.findOne(id);
+  async removeWishlist(id: number, userId: number): Promise<DeleteResult> {
+    const wishlist = await this.findWishlistById(id);
+    if (!wishlist) {
+      throw new NotFoundException('Wishlist not found');
+    }
     if (wishlist.owner.id !== userId) {
       throw new ForbiddenException(`Forbidden to delete someone else's wish`);
     }
