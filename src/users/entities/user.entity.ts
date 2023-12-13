@@ -3,7 +3,7 @@ import { Length, IsUrl, IsEmail } from 'class-validator';
 import { Wish } from 'src/wishes/entities/wish.entity';
 import { Offer } from 'src/offers/entities/offer.entity';
 import { Wishlist } from 'src/wishlists/entities/wishlist.entity';
-import { CommonEntity } from 'src/common.entity';
+import { CommonEntity } from 'src/entites/base.entity';
 
 @Entity()
 export class User extends CommonEntity {
@@ -19,7 +19,7 @@ export class User extends CommonEntity {
   @IsUrl()
   avatar: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, select: false })
   @IsEmail()
   email: string;
 

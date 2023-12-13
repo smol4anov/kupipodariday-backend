@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { findUserDto } from './dto/find-user.dto';
+import { FindUserDto } from './dto/find-user.dto';
 import { JwtGuard } from '../auth/guards/jwt.guard';
 
 @Controller('users')
@@ -25,7 +25,7 @@ export class UsersController {
 
   @Get('/me')
   findCurrentUser(@Request() req) {
-    return req.user;
+    return this.usersService.findCurrentUser(req.user);
   }
 
   @Patch('/me')
@@ -47,7 +47,7 @@ export class UsersController {
   }
 
   @Post('/find')
-  create(@Body() findUserDto: findUserDto) {
+  create(@Body() findUserDto: FindUserDto) {
     return this.usersService.findUserByQuery(findUserDto);
   }
 }

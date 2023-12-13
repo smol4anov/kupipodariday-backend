@@ -1,4 +1,4 @@
-import { CommonEntity } from '../../common.entity';
+import { CommonEntity } from '../../entites/base.entity';
 import {
   Entity,
   Column,

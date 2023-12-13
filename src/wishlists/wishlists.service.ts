@@ -80,6 +80,9 @@ export class WishlistsService {
       );
     }
     Object.assign(wishlist, updateWishlistDto);
+    wishlist.items = await this.wishesService.findManyByIds(
+      updateWishlistDto.itemsId,
+    );
     try {
       return await this.wishlistRepository.save(wishlist);
     } catch (err) {

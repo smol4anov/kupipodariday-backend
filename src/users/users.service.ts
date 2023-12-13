@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { findUserDto } from './dto/find-user.dto';
-import { Repository, QueryFailedError, Like } from 'typeorm';
+import { FindUserDto } from './dto/find-user.dto';
+import { Repository, QueryFailedError, ILike } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DatabaseError } from 'pg';
 import { hash } from 'bcrypt';
@@ -37,7 +37,7 @@ export class UsersService {
 
   async findUser(username: string) {
     const user = await this.userRepository.findOne({
-      select: { id: true, password: true },
+      select: { id: true, password: true, email: true },
       where: { username },
     });
     if (!user) {
@@ -48,6 +48,11 @@ export class UsersService {
 
   async findOne(id: number) {
     return await this.userRepository.findOne({ where: { id } });
+  }
+
+  async findCurrentUser(currentUser: User) {
+    const hiddenFields = await this.findUser(currentUser.username);
+    return { ...currentUser, email: hiddenFields.email };
   }
 
   async findAndUpdateCurrentUser(
@@ -69,10 +74,9 @@ export class UsersService {
   }
 
   async findUserByUsername(username: string) {
-    const { password, ...user } = await this.userRepository.findOne({
+    return await this.userRepository.findOne({
       where: { username },
     });
-    return user;
   }
 
   async findUsersWishesByUsername(username: string) {
@@ -88,16 +92,12 @@ export class UsersService {
     return user.wishes;
   }
 
-  async findUserByQuery(findUserDto: findUserDto) {
-    const userList = await this.userRepository.find({
+  async findUserByQuery(findUserDto: FindUserDto) {
+    return await this.userRepository.find({
       where: [
-        { username: Like(`%${findUserDto.query}%`) },
-        { email: Like(`%${findUserDto.query}%`) },
+        { username: ILike(`%${findUserDto.query}%`) },
+        { email: ILike(`%${findUserDto.query}%`) },
       ],
-    });
-    return userList.map((item) => {
-      const { password, ...user } = item;
-      return user;
     });
   }
 }

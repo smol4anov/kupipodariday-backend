@@ -59,7 +59,7 @@ export class WishesService {
   }
 
   async findOne(id: number) {
-    return await this.wishRepository.findOne({
+    const wish = await this.wishRepository.findOne({
       where: {
         id,
       },
@@ -70,24 +70,26 @@ export class WishesService {
         },
       },
     });
-  }
-
-  async update(id: number, userId: number, updateWishDto: UpdateWishDto) {
-    const wish = await this.wishRepository.findOne({
-      relations: {
-        offers: true,
-      },
-      where: { id },
-    });
     if (!wish) {
       throw new NotFoundException('Wish not found');
     }
+    return wish;
+  }
+
+  async findOneForUpdateOrDelete(id: number, userId: number) {
+    const wish = await this.findOne(id);
     if (wish.offers.length > 0) {
       throw new ForbiddenException('Wish has offers already');
     }
     if (wish.owner.id !== userId) {
       throw new ForbiddenException(`Forbidden to update someone else's wish`);
     }
+    return wish;
+  }
+
+  async update(id: number, userId: number, updateWishDto: UpdateWishDto) {
+    const wish = await this.findOneForUpdateOrDelete(id, userId);
+
     Object.assign(wish, updateWishDto);
     try {
       return await this.wishRepository.save(wish);
@@ -100,11 +102,9 @@ export class WishesService {
   }
 
   async remove(id: number, userId: number) {
-    const wish = await this.findOne(id);
-    if (wish.owner.id !== userId) {
-      throw new ForbiddenException(`Forbidden to delete someone else's wish`);
-    }
-    return await this.wishRepository.delete(wish);
+    await this.findOneForUpdateOrDelete(id, userId);
+
+    return await this.wishRepository.delete(id);
   }
 
   async copyWish(wishId: number, user: User) {

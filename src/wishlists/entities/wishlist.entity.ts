@@ -1,6 +1,6 @@
-import { CommonEntity } from '../../common.entity';
+import { CommonEntity } from '../../entites/base.entity';
 import { Wish } from '../../wishes/entities/wish.entity';
-import { Entity, Column, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToMany, ManyToOne } from 'typeorm';
 import { Length, IsUrl } from 'class-validator';
 import { User } from '../../users/entities/user.entity';
 
@@ -20,6 +20,6 @@ export class Wishlist extends CommonEntity {
   @ManyToOne(() => User, (user: User) => user.wishlists)
   owner: User;
 
-  @ManyToMany(() => Wish, (wish: Wish) => wish.lists)
+  @ManyToMany(() => Wish, (wish: Wish) => wish.lists, { onDelete: 'CASCADE' })
   items: Wish[];
 }
